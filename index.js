@@ -13,6 +13,133 @@ app.listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`)
 })
 
+
+// clientes
+
+const esquemaClientes = new mongoose.Schema({
+    nomeCliente: { type: String, required: true },
+    nomePet: { type: String, required: true },
+    telefone: { type: String, required: true },
+    email: { type: String, required: true },
+})
+
+const Cliente = mongoose.model("Cliente", esquemaClientes)
+
+async function cadastrarCliente(nomeCliente,nomePet,telefone,email) {
+    try {
+        const novoCliente = new Cliente({ nomeCliente, nomePet, telefone, email })
+        return await novoCliente.save()
+    } catch (erro) {
+        console.error("Erro ao cadastrar cliente:", erro)
+        throw erro
+    }
+}
+
+app.post('/clientes', async (req,res) => {
+    try {
+        const { nomeCliente, nomePet, telefone, email } = req.body
+        const novoCliente = await cadastrarCliente(nomeCliente, nomePet, telefone, email)
+        res.status(201).json({
+            mensagem: "Cliente cadastrado com sucesso",
+            Cliente: novoCliente
+        })
+    } catch (erro) {
+        res.status(500).json({
+            mensagem: "Erro ao cadastrar cliente",
+            erro: erro.message })
+    }
+})
+
+async function buscarClientes() {
+    try {
+        return await Cliente.find()
+    } catch (erro) {
+        console.error("Erro ao buscar cliente:", erro)
+        throw erro
+    }
+}
+
+app.get('/clientes', async (req,res) => {
+    try {
+        const clientes = await buscarClientes()
+        res.status(200).json(clientes)
+    } catch (erro) {
+        res
+        .status(500)
+        .json({mensagem: "Erro ao buscar livro:", erro: erro.message})
+    }
+})
+
+async function atualizarCliente(id, nomeCliente, nomePet, telefone, email) {
+    try {
+        const clienteAtualizado = await Cliente.findByIdAndUpdate(
+            id,
+            { nomeCliente, nomePet, telefone, email },
+            { new: true, runValidators: true }
+        )
+        return clienteAtualizado
+    } catch (erro) {
+        console.log("Erro ao editar cliente:", erro)
+        throw erro
+    }
+}
+
+app.put('/clientes/:id', async (req,res) => {
+    try {
+        const { id } = req.params
+        const { nomeCliente, nomePet, telefone, email } = req.body
+        const clienteAtualizado = await atualizarCliente(
+        id,
+        nomeCliente,
+        nomePet,
+        telefone,
+        email
+        )
+        if (clienteAtualizado) {
+            res
+            .status(200)
+            .json({
+                mensagem: "Cliente atualizado com sucesso",
+                clientes: clienteAtualizado,
+            })
+        } else {
+            res.status(400).json({mensagem: "cliente não encontrado"})
+        }
+    } catch (erro) {
+        res
+        .status(500)
+        .json({mensagem: "Error ao atualizar cliente", erro: erro.message})
+    }
+})
+
+async function deletarCliente(id) {
+    try {
+        const clienteDeletado = await Cliente.findByIdAndDelete(id)
+        return clienteDeletado
+    } catch (erro){
+        console.error("Error ao deletar cliente", erro)
+        throw erro
+    }
+}
+
+app.delete('/clientes/:id', async (req,res) => {
+    try {
+        const { id } = req.params
+        const clienteDeletado = await deletarCliente(id)
+        if(clienteDeletado) {
+            res
+            .status(200)
+            .json({mensagem: "Cliente deletado com sucesso", clientes: deletarCliente})
+        } else {
+            res.status(404).json({mensagem: "Cliente não encontrado"})
+        }
+    } catch (erro) {
+        res
+        .status(500)
+        .json({mensagem: "Erro ao deletar cliente", erro: erro.message})
+    }
+})
+
 // serviços
 
 const esquemaServicos = new mongoose.Schema({
@@ -144,5 +271,131 @@ app.delete("/servico/:id", async (req, res) => {
             mensagem: "Erro ao deletar serviço",
             erro: erro.message
         })
+    }
+})
+
+
+
+// agendamentos 
+
+const esquemaAgendamentos = new mongoose.Schema({
+    data: { type: String, required: true },
+    horario: { type: String, required: true },
+    idCliente: { type: Number, required: true },
+    idServico: { type: Number, required: true },
+})
+
+const Agendamento = mongoose.model("Agendamento", esquemaAgendamentos)
+
+async function criarAgendamento(data, horario, idCliente, idServico) {
+    try {  
+        const novoAgendamento = new Agendamento({ data, horario, idCliente, idServico })
+        return await novoAgendamento.save()
+    } catch (erro) {
+        console.error("Erro ao adicionar agendamento:", erro);
+        throw erro;
+    }
+}
+
+app.post('/agendamentos', async (req, res) => {
+    try {
+        const { data, horario, idCliente, idServico } = req.body
+        const novoAgendamento = await criarAgendamento(data, horario, idCliente, idServico)
+        res.status(201).json({
+            mensagem: "Agendamento adicionado com sucesso",
+            agendamento: novoAgendamento
+        })
+    } catch (erro) {
+        res.status(500).json({ 
+            mensagem: "Erro ao adicionar agendamento",
+            erro: erro.message });
+        }
+})
+
+async function buscarAgendamentos() {
+    try {
+        return await Agendamento.find()
+    } catch (erro) {
+        console.error("Erro ao buscar agendamento", erro)
+        throw erro
+    }
+}
+
+app.get('/agendamentos', async (req,res) => {
+    try {
+        const agendamento = await buscarAgendamentos()
+        res.status(200).json(agendamento)
+    } catch (erro) {
+        res.status(500).json({mensagem: "Erro ao buscar agendamento:", erro: erro.mensagem})
+    }
+})
+
+async function atualizarAgendamentos(id,data,horario,idCliente,idServico){
+    try{
+      const agendamentoAtualizado = await Agendamento.findByIdAndUpdate(
+        id,
+        { data,horario,idCliente,idServico },
+        { new: true, runValidators: true }
+      )
+      return agendamentoAtualizado 
+    } catch (erro) {
+      console.error("Erro ao atualizar o agendamento: ", erro)
+      throw erro
+    }
+}
+  
+app.put("/agendamentos/:id", async (req,res) => {
+    try{
+      const { id } = req.params
+      const { data,horario,idCliente,idServico } = req.body
+      const agendamentoAtualizado = await atualizarAgendamentos(
+        id,
+        data,
+        horario,
+        idCliente,
+        idServico
+      )
+      if(agendamentoAtualizado) {
+        res
+        .status(200)
+        .json({
+          mensagem: "Agendamento atualizado com sucesso",
+          agendamento: agendamentoAtualizado,
+        })
+      } else{
+        res.status(404).json({mensagem: "Agendamento não encontrado"})
+      }
+    } catch (erro) {
+      res
+      .status(500)
+      .json({mensagem: "Erro ao atualizar agendamento", erro: erro.message})
+    }
+})
+
+async function deletarAgendamento(id){
+    try{
+      const agendamentoDeletado = await Agendamento.findByIdAndDelete(id)
+      return agendamentoDeletado
+    } catch (erro) {
+      console.error("Erro ao deletar agendamento:", erro)
+      throw erro
+    }
+}
+  
+app.delete("/agendamentos/:id", async (req,res) => {
+    try {
+      const { id } = req.params
+      const agendamentoDeletado = await deletarAgendamento(id)
+      if(agendamentoDeletado) {
+        res
+        .status(200)
+        .json({mensagem: "Agendamento deletado com sucesso", agendamento: agendamentoDeletado})
+      } else {
+        res.status(404).json({mensagem: "Agendamento não encontrado"})
+      }
+    } catch (erro) {
+      res
+      .status(500)
+      .json({mensagem: "Erro ao deletar agendamento", erro: erro.message})
     }
 })
