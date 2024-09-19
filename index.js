@@ -281,8 +281,8 @@ app.delete("/servico/:id", async (req, res) => {
 const esquemaAgendamentos = new mongoose.Schema({
     data: { type: String, required: true },
     horario: { type: String, required: true },
-    idCliente: { type: Number, required: true },
-    idServico: { type: Number, required: true },
+    idCliente: { type: String, required: true },
+    idServico: { type: String, required: true },
 })
 
 const Agendamento = mongoose.model("Agendamento", esquemaAgendamentos)
@@ -397,5 +397,5 @@ app.delete("/agendamentos/:id", async (req,res) => {
       res
       .status(500)
       .json({mensagem: "Erro ao deletar agendamento", erro: erro.message})
-    }
+     }
 })
